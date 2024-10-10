@@ -15,16 +15,8 @@ import os
 
 data_path = '/data/stor/basic_data/seismic_data/day_vols/WOLVERINE/WOLN/'
 file_prefix = 'WOLN.XX.00.HHZ.2022.' 
-days = np.arange(120,125,1) 
-stn_names = []
-for day in days: 
-    stn = data_path + file_prefix + str(day)
-    if os.path.exists(stn):
-        stn_names.append(stn)
-    else:
-        continue
-
-
+day = 182
+st = obspy.read(data_path + file_prefix + str(day), format='MSEED')
 
 '''
 # filename0 = 'BBGU.LM..HHZ.2017.187'
@@ -43,11 +35,10 @@ filenames = ['SE7.YG.00.HHZ.2021.223',
              'SE7.YG.00.HHZ.2021.227',
 ]
 '''
-#%%
 
-st = obspy.Stream()
-for stnname in stn_names:
-    st += obspy.read(stnname)
+#st = obspy.Stream()
+#for stnname in stn_names:
+    #st += obspy.read(stnname)
 # st += obspy.read(data_path + filename1)
 # st += obspy.read(data_path + filename2)
 # st += obspy.read(data_path + filename3)
@@ -56,15 +47,12 @@ for stnname in stn_names:
 # st += obspy.read('C:\\Users\\dbehr\\Documents\\Seismograph_scripts\\Test_files\\AM.R7F0A.00.EHZ.D.2019.286')
 # st += obspy.read('C:\\Users\\dbehr\\Documents\\Seismograph_scripts\\Test_files\\AM.R7F0A.00.EHZ.D.2019.287')
 # st += obspy.read('C:\\Users\\dbehr\\Documents\\Seismograph_scripts\\Test_files\\AM.R7F0A.00.EHZ.D.2019.288')
-
-#%%
 # sort
 # st.sort(['starttime'])
 #st.merge()
 
 # start time in plot equals 0
 # dt = st[0].stats.starttime.timestamp
-#%%
 # # Go through the stream object, determine time range in julian seconds
 # # and plot the data with a shared x axis
 # plt.figure()
@@ -88,15 +76,13 @@ for stnname in stn_names:
 #%%
 pre_filt1 = [0.05, 0.1, 80, 100] #standard bandpass parameters to remove low and high freq. signal 
 instr_resp = read_inventory("/data/stor/basic_data/seismic_data/day_vols/WOLVERINE/resp/Wolverine_station_20240824.xml")
-station_rem=st.copy()
-station_rem.remove_response(inventory=instr_resp, water_level= None,pre_filt=pre_filt1)
-
 #%%
-start = station_rem[0].stats.starttime
-end = station_rem[0].stats.endtime
-station_rem_spec = station_rem.copy()
-#station_rem_cut.trim(starttime=start+(20*60*60), endtime = start+(20*60*60)+60)
-#station_rem_spec = station_rem_cut.copy()
+start = st[0].stats.starttime
+end = st[0].stats.endtime
+station_cut = st.copy()
+station_cut.trim(starttime=start+(20*60*60), endtime = start+(20*60*60)+60*60)
+station_rem_spec = station_cut.copy()
+station_rem_spec.remove_response(inventory=instr_resp, water_level= None,pre_filt=pre_filt1)
 #print(station_rem_cut)
 #%% Calculate the spectra of a segment of data.
 num_welch_segs = 8
@@ -119,7 +105,7 @@ ax_spec.plot(freqs, power_db,'r')
 ax_spec.set_xscale('log')
 ax_spec.set_xlabel('Frequency [Hz]')
 ax_spec.set_ylabel('Power [dB ref. counts^2/Hz]')
-#ax_spec.set_ylim(-40, 60)
+ax_spec.set_ylim(-200, -120)
 ax_spec.grid()
 
 
